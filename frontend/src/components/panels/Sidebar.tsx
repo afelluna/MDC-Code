@@ -116,7 +116,7 @@ export function Sidebar({
             </div>
             {sortedEvents.length > VISIBLE_EVENT_COUNT && (
               <Link to="/portal" className="event-log-more">
-                See more in client dashboard <ChevronRight size={15} />
+                See More in Portal Dashboard <ChevronRight size={15} />
               </Link>
             )}
           </>

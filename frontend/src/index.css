@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ── Design tokens (USHER brand, light) ───────────────────────────────── */
 :root {
@@ -134,8 +134,8 @@ h1, h2, h3, p { margin: 0; }
 /* ── Layout: sidebar + main ───────────────────────────────────────────── */
 .layout-grid {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: 292px minmax(0, 1fr);
+  gap: 14px;
   align-items: start;
 }
 
@@ -640,8 +640,9 @@ h1, h2, h3, p { margin: 0; }
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding: 14px 20px 12px;
+  padding: 8px 14px;
   color: var(--text-primary);
+  font-family: 'Rajdhani', 'Poppins', sans-serif;
   background:
     radial-gradient(1200px 500px at 50% -10%, rgba(56, 189, 248, 0.08), transparent),
     var(--bg-page);
@@ -699,27 +700,28 @@ h1, h2, h3, p { margin: 0; }
 
 .app-shell--kiosk .topbar-v2 {
   flex-shrink: 0;
-  padding: 6px 4px 16px;
+  min-height: 96px;
+  padding: 12px 10px 20px;
   border-bottom: 1px solid var(--border-subtle);
-  margin-bottom: 12px;
-  align-items: flex-start;
+  margin-bottom: 14px;
+  align-items: center;
+  background: radial-gradient(600px 120px at 50% 0%, rgba(56, 189, 248, 0.10), transparent);
 }
 
 .app-shell--kiosk .topbar-clock-block {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding-top: 6px;
+  gap: 12px;
 }
 .app-shell--kiosk .topbar-clock-icon { color: var(--brand); flex-shrink: 0; }
-.app-shell--kiosk .topbar-clock-date { font-size: 1rem; font-weight: 700; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
-.app-shell--kiosk .topbar-clock-time { font-size: 0.85rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-top: 3px; }
+.app-shell--kiosk .topbar-clock-date { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
+.app-shell--kiosk .topbar-clock-time { font-size: 0.92rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
 
-.app-shell--kiosk .topbar-title { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.app-shell--kiosk .topbar-logo { width: 46px; height: 46px; margin-bottom: 4px; filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.55)); }
-.app-shell--kiosk .topbar-title h1 { letter-spacing: 0.16em; font-size: 2rem; }
-.app-shell--kiosk .topbar-title p { font-size: 0.78rem; letter-spacing: 0.22em; }
-.app-shell--kiosk .topbar-status { color: var(--text-secondary); font-size: 0.82rem; padding-top: 6px; }
+.app-shell--kiosk .topbar-title { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.app-shell--kiosk .topbar-logo { width: 56px; height: 56px; margin-bottom: 6px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6)); }
+.app-shell--kiosk .topbar-title h1 { letter-spacing: 0.2em; font-size: 2.3rem; font-weight: 700; font-family: 'Rajdhani', sans-serif; }
+.app-shell--kiosk .topbar-title p { font-size: 0.82rem; letter-spacing: 0.26em; font-weight: 600; }
+.app-shell--kiosk .topbar-status { color: var(--text-secondary); font-size: 0.86rem; font-family: 'JetBrains Mono', monospace; gap: 8px; }
 
 .app-shell--kiosk .footer-item-theme { justify-content: flex-end; }
 
@@ -815,11 +817,23 @@ h1, h2, h3, p { margin: 0; }
   padding: 12px 16px;
 }
 
-.app-shell--kiosk .node-row-title { flex-shrink: 0; margin-bottom: 8px; }
+.app-shell--kiosk .node-row-title { flex-shrink: 0; margin-bottom: 10px; font-size: 1rem; letter-spacing: 0.05em; }
 .app-shell--kiosk .node-row-top { flex-shrink: 0; }
 
-.app-shell--kiosk .mini-panel { padding: 10px 12px; gap: 8px; }
-.app-shell--kiosk .hero-card { min-height: 0; padding: 12px 16px; }
+.app-shell--kiosk .mini-panel { padding: 12px 14px; gap: 10px; }
+.app-shell--kiosk .mini-panel-title { font-size: 1rem; }
+.app-shell--kiosk .mini-panel-stat-value { font-size: 1.05rem; }
+.app-shell--kiosk .mini-shield { width: 52px; height: 58px; }
+.app-shell--kiosk .mini-shield-number { font-size: 1.25rem; }
+
+.app-shell--kiosk .hero-card {
+  min-height: 0;
+  padding: 14px 18px;
+  border-width: 1.5px;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.app-shell--kiosk .hero-number { font-size: clamp(46px, 6.5vw, 72px); }
+.app-shell--kiosk .hero-label { font-size: 1.15rem; }
 
 .app-shell--kiosk .chart-panel {
   flex: 1 1 auto;
@@ -835,11 +849,13 @@ h1, h2, h3, p { margin: 0; }
   height: auto;
 }
 
-.app-shell--kiosk .chart-legend { flex-shrink: 0; margin-top: 6px; }
+.app-shell--kiosk .chart-legend { flex-shrink: 0; margin-top: 6px; font-size: 0.8rem; }
+.app-shell--kiosk .peis-strip-item { font-size: 0.7rem; }
+.app-shell--kiosk .peis-strip-caption { font-size: 0.72rem; }
 
-.app-shell--kiosk .footer-bar { flex-shrink: 0; margin-top: 8px; padding: 10px 16px; }
-.app-shell--kiosk .footer-item { color: var(--text-secondary); }
-.app-shell--kiosk .footer-item strong { color: var(--text-primary); }
+.app-shell--kiosk .footer-bar { flex-shrink: 0; min-height: 48px; margin-top: 8px; padding: 11px 18px; }
+.app-shell--kiosk .footer-item { color: var(--text-secondary); font-size: 0.86rem; }
+.app-shell--kiosk .footer-item strong { color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
 
 .app-shell--kiosk .hero-card {
   border: 1px solid var(--border-default);
@@ -883,7 +899,9 @@ h1, h2, h3, p { margin: 0; }
   border-radius: var(--radius-md);
   background: var(--surface-sunken);
   border: 1px solid var(--border-subtle);
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
+.event-log-item:hover { border-color: var(--border-default); background: var(--brand-dim); }
 
 .event-log-badge {
   width: 26px;
@@ -1209,6 +1227,71 @@ tr.selected-row td { background: var(--brand-dim); }
   .topbar-status { align-items: center; }
   .stat-tiles { grid-template-columns: 1fr; }
   .footer-bar { grid-template-columns: 1fr; }
+}
+
+/* ── Kiosk responsive fallback ─────────────────────────────────────────
+   The kiosk shell (.app-shell--kiosk) is tuned to fill one fixed portrait
+   viewport with no scrolling. That only works for a tall portrait panel —
+   on a landscape display or a phone-width screen the same node-row heights
+   would crush the charts and clip content. Relax it to a normal scrollable
+   flow (page scrolls, nothing is squeezed) whenever the viewport isn't tall
+   portrait, while keeping all the same cards/colors/typography. ────────── */
+@media (orientation: landscape), (max-width: 900px) {
+  .app-shell--kiosk {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .app-shell--kiosk .layout-grid {
+    flex: none;
+    min-height: 0;
+  }
+
+  .app-shell--kiosk .sidebar { height: auto; }
+
+  .app-shell--kiosk .side-card--grow { flex: none; }
+  .app-shell--kiosk .side-card--grow .event-log-list {
+    flex: none;
+    overflow: visible;
+    max-height: 380px;
+    overflow-y: auto;
+  }
+
+  .app-shell--kiosk .layout-grid main { height: auto; }
+
+  .app-shell--kiosk .node-row {
+    flex: none;
+    min-height: 320px;
+  }
+
+  .app-shell--kiosk .chart-panel { flex: none; }
+  .app-shell--kiosk .chart-wrapper {
+    flex: none;
+    height: 200px;
+  }
+}
+
+/* Landscape on a wide-enough screen: keep sidebar + node column side by side. */
+@media (orientation: landscape) and (min-width: 900px) {
+  .app-shell--kiosk .layout-grid {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+}
+
+/* Landscape on a narrow/mobile screen, or portrait mobile: stack everything. */
+@media (max-width: 760px) {
+  .app-shell--kiosk .layout-grid { grid-template-columns: 1fr; }
+  .app-shell--kiosk .sidebar { flex-direction: column; }
+  .app-shell--kiosk .node-row-top { grid-template-columns: 1fr; }
+  .app-shell--kiosk .topbar-v2 {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+    min-height: 0;
+  }
+  .app-shell--kiosk .topbar-status { align-items: center; }
+  .app-shell--kiosk .footer-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* ── Report modal (Portal → Event History) ────────────────────────────── */
