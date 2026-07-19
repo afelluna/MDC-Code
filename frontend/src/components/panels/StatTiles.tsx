@@ -6,10 +6,11 @@ interface StatTilesProps {
   peakAcceleration: number;
   eventsThisYear: number;
   driftRatio: number;
+  driftRatioConfigured: boolean;
   stacked?: boolean;
 }
 
-export function StatTiles({ maxIntensity, peakAcceleration, eventsThisYear, driftRatio, stacked }: StatTilesProps) {
+export function StatTiles({ maxIntensity, peakAcceleration, eventsThisYear, driftRatio, driftRatioConfigured, stacked }: StatTilesProps) {
   const scale = INTENSITY_SCALE.find((i) => i.level === maxIntensity) || INTENSITY_SCALE[0];
   const msg = getIntensityMessage(maxIntensity);
 
@@ -55,7 +56,7 @@ export function StatTiles({ maxIntensity, peakAcceleration, eventsThisYear, drif
         <div className="stat-tile-body">
           <span className="stat-tile-label">Drift Ratio</span>
           <span className="stat-tile-value">{driftRatio.toFixed(2)}%</span>
-          <span className="stat-tile-sub">(Peak / Story)</span>
+          <span className="stat-tile-sub">{driftRatioConfigured ? '(Peak / Story height)' : '(Peak / default 3m — configure in Admin)'}</span>
         </div>
       </div>
     </div>

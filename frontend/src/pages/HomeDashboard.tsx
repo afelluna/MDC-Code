@@ -10,6 +10,8 @@ import { mdcApi } from '../services/api';
 import { mdcSocket } from '../services/socket';
 import type { SensorSample } from '../types';
 import usherLogo from '../assets/usher-no-text.svg';
+import { useTheme } from '../hooks/useTheme';
+import { isFloorHeightConfigured, loadFloorHeightMm } from '../constants/buildingConfig';
 
 type NodeState = {
   id: string;
@@ -26,10 +28,6 @@ type NodeState = {
 };
 
 const STALE_AFTER_MS = 8000;
-const THEME_KEY = 'usher-mdc-theme';
-
-/** Assumed inter-story height (mm) used to convert peak displacement into a drift ratio. */
-const STORY_HEIGHT_MM = 3000;
 
 function formatClockDate(date: Date) {
   return date
@@ -55,10 +53,7 @@ function floorRank(location: string): number {
 }
 
 export function HomeDashboard() {
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const saved = localStorage.getItem(THEME_KEY);
-    return saved === 'light' ? 'light' : 'dark';
-  });
+  const { theme, toggleTheme } = useTheme();
   const [clock, setClock] = useState(new Date());
   const [nodes, setNodes] = useState<any[]>([]);
   const [intensity, setIntensity] = useState<any>(null);
@@ -146,12 +141,13 @@ export function HomeDashboard() {
     }).length;
     const peakAcceleration = Math.max(...nodeStates.map((node) => node.peakAcceleration), 0.00001);
     const peakDisplacementMm = peakAcceleration * 1000;
-    const driftRatio = (peakDisplacementMm / STORY_HEIGHT_MM) * 100;
+    const driftRatio = (peakDisplacementMm / loadFloorHeightMm()) * 100;
     return {
       maxIntensity,
       eventsThisYear,
       peakAcceleration,
-      driftRatio
+      driftRatio,
+      driftRatioConfigured: isFloorHeightConfigured()
     };
   }, [nodeStates, history, clock]);
 
@@ -179,10 +175,6 @@ export function HomeDashboard() {
       if (holdTimerRef.current) window.clearTimeout(holdTimerRef.current);
     };
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem(THEME_KEY, theme);
-  }, [theme]);
 
   const warningLevel = intensity?.warning_min ?? 4;
   const alertLevel = intensity?.alert_min ?? 6;
@@ -220,6 +212,7 @@ export function HomeDashboard() {
           peakAcceleration={summary.peakAcceleration}
           eventsThisYear={summary.eventsThisYear}
           driftRatio={summary.driftRatio}
+          driftRatioConfigured={summary.driftRatioConfigured}
           events={history}
         />
 
@@ -262,7 +255,7 @@ export function HomeDashboard() {
         serverIp={nodeStates[0]?.monitorIp || '—'}
         lastUpdateLabel={lastUpdateLabel}
         theme={theme}
-        onToggleTheme={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
+        onToggleTheme={toggleTheme}
       />
     </div>
   );

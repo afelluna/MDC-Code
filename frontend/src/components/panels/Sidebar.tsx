@@ -34,6 +34,7 @@ interface SidebarProps {
   peakAcceleration: number;
   eventsThisYear: number;
   driftRatio: number;
+  driftRatioConfigured: boolean;
   events: SidebarEventInfo[];
 }
 
@@ -53,6 +54,7 @@ export function Sidebar({
   peakAcceleration,
   eventsThisYear,
   driftRatio,
+  driftRatioConfigured,
   events,
 }: SidebarProps) {
   const sortedEvents = useMemo(
@@ -67,6 +69,7 @@ export function Sidebar({
         peakAcceleration={peakAcceleration}
         eventsThisYear={eventsThisYear}
         driftRatio={driftRatio}
+        driftRatioConfigured={driftRatioConfigured}
         stacked
       />
 
@@ -112,7 +115,7 @@ export function Sidebar({
               })}
             </div>
             {sortedEvents.length > VISIBLE_EVENT_COUNT && (
-              <Link to="/dashboard" className="event-log-more">
+              <Link to="/portal" className="event-log-more">
                 See more in client dashboard <ChevronRight size={15} />
               </Link>
             )}

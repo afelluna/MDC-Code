@@ -1,7 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { HomeDashboard } from './pages/HomeDashboard';
-import { AdminPanel } from './pages/AdminPanel';
-import { ClientDashboard } from './pages/ClientDashboard';
+import { Portal } from './pages/Portal';
 import './App.css';
 
 function App() {
@@ -10,8 +9,9 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<HomeDashboard />} />
-        <Route path="/admin" element={<AdminPanel />} />
-        <Route path="/dashboard" element={<ClientDashboard />} />
+        <Route path="/portal" element={<Portal />} />
+        <Route path="/admin" element={<Navigate to="/portal" replace />} />
+        <Route path="/dashboard" element={<Navigate to="/portal" replace />} />
       </Routes>
     </HashRouter>
   );
