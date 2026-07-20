@@ -1,5 +1,6 @@
 import io from 'socket.io-client';
 import { getApiBase } from './api';
+import { nowInManila } from '../lib/utils';
 import type { SensorSample } from '../types';
 
 export interface SocketClientEvents {
@@ -24,6 +25,9 @@ class SocketManager {
 
   public registerListeners(listeners: Partial<SocketClientEvents>) {
     this.listeners = { ...this.listeners, ...listeners };
+    // Connection may have already resolved before this component mounted
+    // and registered its listener — replay the current status so it isn't missed.
+    listeners.onStatusChange?.(this.connected);
   }
 
   private connect() {
@@ -106,7 +110,7 @@ class SocketManager {
       node_name: nodeName,
       event_unique_id: `event_sim_${Date.now()}_int${targetIntensity}`,
       intensity: targetIntensity,
-      created_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
+      created_at: nowInManila()
     };
     this.listeners.onFirstAlarm?.(alarmData);
 
@@ -248,7 +252,26 @@ class SocketManager {
   public isConnected() {
     return this.connected;
   }
+
+  // Called before Vite HMR replaces this module — without it, every edit to a
+  // file that imports socket.ts spawns a brand-new socket.io connection while
+  // the old one keeps running in the background, silently piling up duplicate
+  // connections (and duplicate work) over a dev session.
+  public dispose() {
+    this.stopMocking();
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      this.socket.close();
+      this.socket = null;
+    }
+  }
 }
 
 export const mdcSocket = new SocketManager();
 export default mdcSocket;
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    mdcSocket.dispose();
+  });
+}

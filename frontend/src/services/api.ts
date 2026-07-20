@@ -1,3 +1,4 @@
+import { nowInManila } from '../lib/utils';
 
 // Resolve backend URL
 export function getApiBase(): string {
@@ -87,8 +88,7 @@ function generateMockHistory() {
     const intensity = Math.floor(Math.random() * 7) + 2; // PEIS 2 to 8
     const peakAccel = parseFloat((0.005 + (intensity * intensity * 0.015) + Math.random() * 0.02).toFixed(5));
     const timestamp = baseTime + i * 1.5 * 3600 * 1000 + Math.random() * 100000;
-    const dateObj = new Date(timestamp);
-    const created_at = dateObj.toISOString().slice(0, 19).replace('T', ' ');
+    const created_at = nowInManila(new Date(timestamp));
     const event_unique_id = `event_${timestamp}_int${intensity}`;
     
     events.push({

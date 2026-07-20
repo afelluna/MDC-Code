@@ -5,4 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: './',
+  server: {
+    // Bind to all interfaces (not just localhost) so other devices on the
+    // LAN can open this dev server directly, e.g. http://<this-machine-ip>:5173
+    host: true,
+  },
 })

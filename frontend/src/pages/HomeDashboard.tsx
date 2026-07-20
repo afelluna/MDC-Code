@@ -29,9 +29,16 @@ type NodeState = {
 
 const STALE_AFTER_MS = 8000;
 
+// Backend timestamps (event log created_at) are always stamped in Asia/Manila
+// (see moment-timezone usage in SocketEventController / UploadController). Force
+// the header clock to the same zone rather than the host OS's local time, so a
+// kiosk box misconfigured to a different timezone doesn't show a header clock
+// that disagrees with its own event log.
+const PHT_TIMEZONE = 'Asia/Manila';
+
 function formatClockDate(date: Date) {
   return date
-    .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: PHT_TIMEZONE })
     .toUpperCase();
 }
 
@@ -61,12 +68,15 @@ export function HomeDashboard() {
   const [socketConnected, setSocketConnected] = useState(mdcSocket.isConnected());
   const [telemetry, setTelemetry] = useState<Record<string, SensorSample[]>>({});
   const [pings, setPings] = useState<Record<string, 'alive' | 'connect_error'>>({});
-  const [displayIntensity, setDisplayIntensity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [heldIntensity, setHeldIntensity] = useState<Record<string, number>>({});
 
-  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const peakHeldRef = useRef<number>(1);
-  const liveIntensityRef = useRef<number>(1);
+  const nodeLiveRef = useRef<Record<string, number>>({});
+  const nodePeakRef = useRef<Record<string, number>>({});
+  const nodeTimerRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const pendingTelemetryRef = useRef<Record<string, SensorSample[]>>({});
+  const telemetryDirtyRef = useRef(false);
+  const telemetryFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -91,9 +101,25 @@ export function HomeDashboard() {
   }, []);
 
   useEffect(() => {
+    // Coalesce telemetry into a ref instead of setState-per-message: the real
+    // sensor backend can push "node" events far more often/burstier than the
+    // 250ms-cadenced mock feed did, and rendering (+ uPlot redraw) on every
+    // single message is what makes the live feed feel laggy. Flushing once
+    // per animation frame caps the render rate regardless of message rate.
+    const flushTelemetry = () => {
+      telemetryFrameRef.current = null;
+      if (!telemetryDirtyRef.current) return;
+      telemetryDirtyRef.current = false;
+      setTelemetry({ ...pendingTelemetryRef.current });
+    };
+
     mdcSocket.registerListeners({
       onNodeTelemetry: (nodeName, samples) => {
-        setTelemetry((current) => ({ ...current, [nodeName]: samples.slice(-90) }));
+        pendingTelemetryRef.current[nodeName] = samples.slice(-90);
+        telemetryDirtyRef.current = true;
+        if (telemetryFrameRef.current == null) {
+          telemetryFrameRef.current = window.requestAnimationFrame(flushTelemetry);
+        }
       },
       onIpPing: (ip, status) => {
         setPings((current) => ({ ...current, [ip]: status }));
@@ -103,6 +129,13 @@ export function HomeDashboard() {
       },
       onStatusChange: setSocketConnected
     });
+
+    return () => {
+      if (telemetryFrameRef.current != null) {
+        window.cancelAnimationFrame(telemetryFrameRef.current);
+        telemetryFrameRef.current = null;
+      }
+    };
   }, []);
 
   const nodeStates = useMemo<NodeState[]>(() => {
@@ -133,7 +166,7 @@ export function HomeDashboard() {
   }, [nodes, telemetry, pings, clock]);
 
   const summary = useMemo(() => {
-    const maxIntensity = Math.max(...nodeStates.map((node) => node.intensity), 1);
+    const maxIntensity = Math.max(...nodeStates.map((node) => heldIntensity[node.id] ?? node.intensity), 1);
     const yearKey = clock.getFullYear().toString();
     const eventsThisYear = history.filter((event: any) => {
       const createdAt = event.created_at;
@@ -149,7 +182,7 @@ export function HomeDashboard() {
       driftRatio,
       driftRatioConfigured: isFloorHeightConfigured()
     };
-  }, [nodeStates, history, clock]);
+  }, [nodeStates, heldIntensity, history, clock]);
 
   const orderedNodeStates = useMemo(() => {
     return nodeStates
@@ -157,28 +190,40 @@ export function HomeDashboard() {
       .sort((a, b) => floorRank(b.node.location) - floorRank(a.node.location));
   }, [nodeStates]);
 
+  // How long a node's display holds at its peak PEIS before falling back to
+  // live readings. Mirrors the physical event capture window configured in
+  // intensity_configs (`after` = seconds recorded past the trigger), so the
+  // dashboard doesn't drop back to idle before the recorder itself considers
+  // the event finished. Floor of 5s guards against a misconfigured 0/blank value.
+  const eventHoldMs = Math.max(Number(intensity?.after) || 8, 5) * 1000;
+
   useEffect(() => {
-    liveIntensityRef.current = summary.maxIntensity;
-    if (summary.maxIntensity >= peakHeldRef.current) {
-      peakHeldRef.current = summary.maxIntensity;
-      setDisplayIntensity(summary.maxIntensity);
-      if (holdTimerRef.current) window.clearTimeout(holdTimerRef.current);
-      holdTimerRef.current = window.setTimeout(() => {
-        peakHeldRef.current = 0;
-        setDisplayIntensity(liveIntensityRef.current);
-      }, 8000);
-    }
-  }, [summary.maxIntensity]);
+    nodeStates.forEach((node) => {
+      nodeLiveRef.current[node.id] = node.intensity;
+      const peak = nodePeakRef.current[node.id] ?? 0;
+      if (node.intensity >= peak) {
+        nodePeakRef.current[node.id] = node.intensity;
+        setHeldIntensity((current) =>
+          current[node.id] === node.intensity ? current : { ...current, [node.id]: node.intensity }
+        );
+        if (nodeTimerRef.current[node.id]) window.clearTimeout(nodeTimerRef.current[node.id]);
+        nodeTimerRef.current[node.id] = window.setTimeout(() => {
+          nodePeakRef.current[node.id] = 0;
+          setHeldIntensity((current) => ({ ...current, [node.id]: nodeLiveRef.current[node.id] ?? 1 }));
+        }, eventHoldMs);
+      }
+    });
+  }, [nodeStates, eventHoldMs]);
 
   useEffect(() => {
     return () => {
-      if (holdTimerRef.current) window.clearTimeout(holdTimerRef.current);
+      Object.values(nodeTimerRef.current).forEach((timer) => window.clearTimeout(timer));
     };
   }, []);
 
   const warningLevel = intensity?.warning_min ?? 4;
   const alertLevel = intensity?.alert_min ?? 6;
-  const lastUpdateLabel = clock.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const lastUpdateLabel = clock.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: PHT_TIMEZONE });
 
   return (
     <div className="app-shell app-shell--kiosk" data-theme={theme}>
@@ -187,7 +232,7 @@ export function HomeDashboard() {
           <Clock size={22} className="topbar-clock-icon" aria-hidden="true" />
           <div>
             <div className="topbar-clock-date">{formatClockDate(clock)}</div>
-            <div className="topbar-clock-time">{clock.toLocaleTimeString('en-US', { hour12: false })} PHT</div>
+            <div className="topbar-clock-time">{clock.toLocaleTimeString('en-US', { hour12: false, timeZone: PHT_TIMEZONE })} PHT</div>
           </div>
         </div>
         <div className="topbar-title">
@@ -208,7 +253,7 @@ export function HomeDashboard() {
           nodes={orderedNodeStates.map(({ node, displayNumber }) => ({ ...node, displayNumber }))}
           nodeServerIp={nodeStates[0]?.monitorIp || '—'}
           warningLevel={warningLevel}
-          maxIntensity={displayIntensity}
+          maxIntensity={summary.maxIntensity}
           peakAcceleration={summary.peakAcceleration}
           eventsThisYear={summary.eventsThisYear}
           driftRatio={summary.driftRatio}
@@ -228,7 +273,8 @@ export function HomeDashboard() {
             </div>
           ) : (
             orderedNodeStates.map(({ node, displayNumber }) => {
-              const scale = INTENSITY_SCALE.find((i) => i.level === node.intensity) || INTENSITY_SCALE[0];
+              const displayedIntensity = heldIntensity[node.id] ?? node.intensity;
+              const scale = INTENSITY_SCALE.find((i) => i.level === displayedIntensity) || INTENSITY_SCALE[0];
               return (
                 <section key={node.id} className="node-row">
                   <div className="node-row-title">
@@ -239,8 +285,8 @@ export function HomeDashboard() {
                     <span className="node-ip">{node.monitorIp || '—'}</span>
                   </div>
                   <div className="node-row-top">
-                    <MiniIntensityPanel intensity={node.intensity} peakAcceleration={node.peakAcceleration} />
-                    <IntensityDisplay intensity={node.intensity} warningLevel={warningLevel} alertLevel={alertLevel} />
+                    <MiniIntensityPanel intensity={displayedIntensity} peakAcceleration={node.peakAcceleration} />
+                    <IntensityDisplay intensity={displayedIntensity} warningLevel={warningLevel} alertLevel={alertLevel} />
                   </div>
                   <Seismogram samples={node.samples} status={nodeSignalStatus(node)} />
                 </section>
